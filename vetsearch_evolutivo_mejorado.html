@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetSearch | Búsqueda Evolutiva</title>
+<style>
+:root{--primary:#167d75;--dark:#183b3a;--bg:#f4f8f7;--accent:#f3a64a;--muted:#718583}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--dark)}
+header{background:#fff;padding:18px 7%;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 12px #0000000b}
+.logo{font-size:25px;font-weight:800;color:var(--primary)}.logo span{color:var(--accent)}
+nav a{text-decoration:none;color:var(--dark);margin-left:22px;font-size:14px;font-weight:600}
+.hero{background:linear-gradient(120deg,#126e68,#24a394);color:#fff;padding:50px 8%;display:flex;justify-content:space-between;align-items:center;gap:25px}
+.hero h1{font-size:clamp(28px,5vw,42px);margin-bottom:12px}.hero p{max-width:600px;line-height:1.7;color:#e4fffa}.hero-icon{font-size:90px}
+.container{max-width:1100px;margin:35px auto;padding:0 20px}
+.section-title{margin:10px 0 18px}.section-title h2{font-size:25px;margin-bottom:6px}.section-title p{color:var(--muted);font-size:14px}
+.card{background:#fff;padding:24px;border-radius:16px;box-shadow:0 4px 18px #193b3a0b;margin-bottom:22px}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}.full{grid-column:1/-1}
+.field label{display:block;font-weight:650;font-size:14px;margin-bottom:8px}
+.field input[type=text],.field input[type=number],.field select{width:100%;padding:12px;border:1px solid #d8e5e1;border-radius:9px;background:#fbfdfc;color:var(--dark);font:inherit}
+.field input:focus,.field select:focus{outline:2px solid var(--primary)}
+.params{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px;padding-top:18px;border-top:1px dashed #d8e5e1}
+.params input{width:100%;accent-color:var(--primary)}.params b{color:var(--primary)}
+button{border:none;cursor:pointer;padding:12px 20px;border-radius:9px;background:var(--primary);color:#fff;font:inherit;font-weight:700}
+button:hover{background:#105f59}button:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{background:#e9f3f0;color:var(--primary)}.btn-secondary:hover{background:#d9ebe6}
+.actions{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+.info{background:#fff7e9;border-left:4px solid var(--accent);padding:14px;border-radius:7px;font-size:13px;line-height:1.6;margin-top:18px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:22px}
+.stat{background:#fff;border-radius:13px;padding:18px;text-align:center;box-shadow:0 3px 14px #00000008}
+.stat strong{display:block;font-size:26px;color:var(--primary);margin-top:6px}.stat small{color:var(--muted)}
+.progress{width:100%;height:12px;background:#e8efec;border-radius:20px;overflow:hidden;margin:13px 0}
+.progress div{height:100%;width:0;background:linear-gradient(90deg,#16877c,#60c7a7);transition:width .3s}
+#estado{font-size:13px;color:var(--muted)}
+.process{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.step{background:#f2f8f6;padding:16px;border-radius:10px;text-align:center;border:1px solid #e0ece8}
+.step .emoji{font-size:26px}.step h4{margin:8px 0 5px;font-size:14px}.step p{font-size:12px;color:var(--muted)}
+canvas{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.table-wrap{overflow-x:auto;max-height:320px;overflow-y:auto}table{width:100%;border-collapse:collapse;font-size:13px;min-width:420px}
+th,td{padding:10px;border-bottom:1px solid #edf1ef;text-align:center}th{background:#eff7f4;color:var(--primary);position:sticky;top:0}
+.result{border:2px solid #a9dcd0;background:#f4fcf9}
+.result-header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.score{color:var(--primary);font-weight:800;font-size:25px}
+.plan-item{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #dfede7}.plan-item small{display:block;color:var(--muted)}.price{font-weight:800;white-space:nowrap}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+.metric{background:#fff;border-radius:10px;padding:12px;font-size:13px}.metric .bar{height:8px;background:#e8efec;border-radius:8px;margin-top:8px;overflow:hidden}.metric .bar div{height:100%;background:var(--primary)}
+.badge{background:#dff4e9;color:#17734d;padding:6px 11px;border-radius:20px;font-size:12px;font-weight:bold}
+footer{text-align:center;padding:28px 15px;background:var(--dark);color:#fff;margin-top:40px;font-size:13px}
+@media(max-width:700px){nav{display:none}.hero-icon{font-size:60px}.form-grid,.params,.metrics{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.process{grid-template-columns:1fr 1fr}.card{padding:16px}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Vet<span>Search</span> 🐾</div>
+  <nav><a href="#registro">Mascota</a><a href="#algoritmo">Algoritmo</a><a href="#resultado">Resultados</a></nav>
+</header>
+
+<section class="hero">
+  <div>
+    <h1>La tecnología al cuidado de tu mascota</h1>
+    <p>Un algoritmo genético explora miles de combinaciones de servicios veterinarios y evoluciona hasta encontrar la que mejor cubre la necesidad de tu mascota, respeta su especie y edad, y cabe en tu presupuesto.</p>
+  </div>
+  <div class="hero-icon">🐶</div>
+</section>
+
+<main class="container">
+<section id="registro">
+  <div class="section-title"><h2>🐾 Datos de la mascota</h2><p>Ingresa la información y ajusta los parámetros de la evolución.</p></div>
+  <div class="card">
+    <div class="form-grid">
+      <div class="field"><label for="nombre">Nombre de la mascota</label><input id="nombre" type="text" maxlength="30" placeholder="Ej. Max"></div>
+      <div class="field"><label for="especie">Tipo de mascota</label>
+        <select id="especie"><option value="perro">🐶 Perro</option><option value="gato">🐱 Gato</option><option value="otro">🐾 Otro</option></select></div>
+      <div class="field"><label for="edad">Edad</label>
+        <select id="edad"><option value="cachorro">Cachorro / joven</option><option value="adulto" selected>Adulto</option><option value="mayor">Adulto mayor</option></select></div>
+      <div class="field"><label for="necesidad">Necesidad principal</label>
+        <select id="necesidad"><option value="general">Consulta general</option><option value="piel">Cuidado de piel</option><option value="digestivo">Cuidado digestivo</option><option value="dental">Salud dental</option><option value="vacunas">Vacunación</option></select></div>
+      <div class="field full"><label for="presupuesto">Presupuesto máximo simulado (MXN)</label><input id="presupuesto" type="number" min="300" max="10000" value="1800"></div>
+    </div>
+    <div class="params">
+      <div class="field"><label for="pP">Población: <b id="vP">30</b></label><input id="pP" type="range" min="10" max="60" step="2" value="30"></div>
+      <div class="field"><label for="pG">Generaciones: <b id="vG">40</b></label><input id="pG" type="range" min="10" max="80" step="5" value="40"></div>
+      <div class="field"><label for="pM">Mutación por gen: <b id="vM">15%</b></label><input id="pM" type="range" min="0" max="40" step="1" value="15"></div>
+    </div>
+    <div class="info"><b>Importante:</b> es una simulación académica. Los servicios y precios son ficticios y el algoritmo no diagnostica ni prescribe tratamientos; las decisiones médicas las toma un veterinario.</div>
+    <div class="actions">
+      <button id="startBtn" onclick="iniciar()">🧬 Iniciar búsqueda evolutiva</button>
+      <button class="btn-secondary" id="clearBtn" onclick="limpiar()">Limpiar</button>
+    </div>
+  </div>
+</section>
+
+<section id="algoritmo">
+  <div class="section-title"><h2>🧬 Proceso del algoritmo genético</h2><p>Cada individuo es un plan de 5 servicios (5 genes). Observa cómo mejora la población.</p></div>
+  <div class="stats">
+    <div class="stat"><small>Generación</small><strong id="sGen">0</strong></div>
+    <div class="stat"><small>Mejor aptitud</small><strong id="sBest">0%</strong></div>
+    <div class="stat"><small>Aptitud promedio</small><strong id="sAvg">0%</strong></div>
+    <div class="stat"><small>Óptimo global</small><strong id="sOpt">–</strong></div>
+  </div>
+  <div class="card">
+    <h3>Progreso evolutivo</h3>
+    <div class="progress"><div id="barra"></div></div>
+    <p id="estado">Esperando el inicio del algoritmo...</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:16px">Etapas de la evolución</h3>
+    <div class="process">
+      <div class="step"><div class="emoji">👥</div><h4>1. Población</h4><p>Planes de servicios generados al azar.</p></div>
+      <div class="step"><div class="emoji">🏆</div><h4>2. Selección</h4><p>Torneos de 3 planes: gana el de mayor aptitud.</p></div>
+      <div class="step"><div class="emoji">🧬</div><h4>3. Cruza</h4><p>Dos padres intercambian genes en un punto de corte.</p></div>
+      <div class="step"><div class="emoji">🔄</div><h4>4. Mutación y elitismo</h4><p>Algunos genes cambian al azar; los 2 mejores pasan intactos.</p></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>📈 Evolución de la aptitud</h3>
+    <canvas id="grafica" width="900" height="270"></canvas>
+    <div class="legend">
+      <span><i style="background:#16877c"></i>Mejor encontrado</span><span><i style="background:#f3a64a"></i>Promedio de la población</span><span><i style="background:#9aa9a6"></i>Óptimo global (fuerza bruta)</span>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:12px">Registro de generaciones</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Generación</th><th>Mejor aptitud</th><th>Promedio</th><th>Estado</th></tr></thead>
+      <tbody id="historial"><tr><td colspan="4">Aún no hay datos.</td></tr></tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="resultado">
+  <div class="section-title"><h2>🏅 Mejor solución encontrada</h2><p>Resultado de la evolución de las combinaciones.</p></div>
+  <div class="card result" id="resultadoCard"><p style="text-align:center;padding:20px;color:var(--muted)">🔬 Ejecuta el algoritmo para ver el resultado.</p></div>
+</section>
+</main>
+
+<footer>
+  <p>VetSearch © 2026 | Proyecto académico de Inteligencia Artificial</p>
+  <p style="margin-top:6px">Búsqueda evolutiva mediante algoritmo genético.</p>
+</footer>
+
+<script>
+/* ============ 1. BASE DE DATOS SIMULADA (5 categorías = 5 genes) ============ */
+const ALL = ['general','piel','digestivo','dental','vacunas'];
+// s(nombre, precio, necesidades que cubre, especie permitida, edad permitida)
+const s = (n, p, t, e = '*', a = '*') => ({n, p, t, e, a});
+const CAT = [
+  {titulo:'Consulta', op:[s('Consulta general',350,ALL), s('Consulta especializada',550,['piel','digestivo','dental']), s('Valoración preventiva',280,['general','vacunas']), s('Sin consulta',0,[])]},
+  {titulo:'Revisión', op:[s('Revisión física básica',200,ALL), s('Evaluación dermatológica',400,['piel']), s('Evaluación digestiva',450,['digestivo']), s('Evaluación dental',350,['dental']), s('Revisión de cartilla',150,['vacunas']), s('Chequeo geriátrico',480,['general'],'*','mayor')]},
+  {titulo:'Estudio de apoyo', op:[s('Citología de piel',320,['piel']), s('Análisis de heces',260,['digestivo']), s('Limpieza dental básica',700,['dental']), s('Biometría hemática',420,['general','digestivo']), s('Sin estudio',0,[])]},
+  {titulo:'Prevención', op:[s('Vacuna múltiple canina',380,['vacunas'],'perro'), s('Vacuna triple felina',380,['vacunas'],'gato'), s('Vacuna de cachorro',420,['vacunas'],'*','cachorro'), s('Desparasitación',180,['general','digestivo','vacunas']), s('Sin prevención',0,[])]},
+  {titulo:'Orientación', op:[s('Cuidados generales',180,['general']), s('Higiene de piel',250,['piel']), s('Alimentación',220,['digestivo']), s('Higiene dental',200,['dental']), s('Plan de vacunación',250,['vacunas']), s('Sin orientación',0,[])]}
+];
+const NG = CAT.length;
+const aleatorio = n => Math.floor(Math.random() * n);
+const esc = t => t.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ============ 2. FUNCIÓN DE APTITUD (0-100) ============ */
+// 55 pts cobertura de la necesidad + 25 pts adecuación a especie/edad + 20 pts economía - penalización por exceso
+function detalle(genes, ctx) {
+  const sel = genes.map((v, i) => CAT[i].op[v]), reales = sel.filter(x => x.p > 0);
+  const costo = sel.reduce((a, x) => a + x.p, 0);
+  let cob = Math.min(reales.filter(x => x.t.includes(ctx.nec)).length, 4) / 4;
+  if (ctx.nec === 'vacunas' && !reales.some(x => x.n.startsWith('Vacuna'))) cob *= 0.6;   // vacunación exige una vacuna
+  const comp = reales.length ? reales.filter(x => (x.e === '*' || x.e === ctx.esp) && (x.a === '*' || x.a === ctx.edad)).length / reales.length : 0;
+  let eco = 0, pen = 0;
+  if (costo <= ctx.pres) eco = 1 - 0.4 * costo / ctx.pres; else pen = Math.min(60, (costo - ctx.pres) / ctx.pres * 100);
+  const f = Math.max(0, Math.min(100, 55 * cob + 25 * comp + 20 * eco - pen));
+  return {sel, costo, cob, comp, eco, pen, f};
+}
+
+/* ============ 3. OPERADORES GENÉTICOS ============ */
+const nuevoGenoma = () => CAT.map(c => aleatorio(c.op.length));
+const evaluarPob = (genomas, ctx) => genomas.map(g => ({g, d: detalle(g, ctx)})).sort((a, b) => b.d.f - a.d.f);
+
+function torneo(pob, k = 3) {                      // selección por torneo
+  let mejor = pob[aleatorio(pob.length)];
+  for (let i = 1; i < k; i++) { const c = pob[aleatorio(pob.length)]; if (c.d.f > mejor.d.f) mejor = c; }
+  return mejor.g;
+}
+function cruzar(a, b) {                            // cruza de un punto
+  const p = 1 + aleatorio(NG - 1);
+  return [[...a.slice(0, p), ...b.slice(p)], [...b.slice(0, p), ...a.slice(p)]];
+}
+function mutar(g, pm) { return g.map((v, i) => Math.random() < pm ? aleatorio(CAT[i].op.length) : v); }
+
+function siguiente(pob, P, pm) {                   // elitismo (2) + hijos por torneo, cruza y mutación
+  const nueva = [pob[0].g.slice(), pob[1].g.slice()];
+  while (nueva.length < P) {
+    const hijos = Math.random() < 0.9 ? cruzar(torneo(pob), torneo(pob)) : [torneo(pob).slice(), torneo(pob).slice()];
+    hijos.forEach(h => { if (nueva.length < P) nueva.push(mutar(h, pm)); });
+  }
+  return nueva;
+}
+
+function fuerzaBruta(ctx) {                        // referencia: evalúa TODAS las combinaciones
+  let mejor = null, total = 0;
+  const g = Array(NG).fill(0);
+  (function rec(i) {
+    if (i === NG) { total++; const d = detalle(g, ctx); if (!mejor || d.f > mejor.d.f) mejor = {g: g.slice(), d}; return; }
+    for (let v = 0; v < CAT[i].op.length; v++) { g[i] = v; rec(i + 1); }
+  })(0);
+  return {mejor, total};
+}
+
+/* ============ 4. INTERFAZ Y EJECUCIÓN ============ */
+const $ = id => document.getElementById(id);
+let ctx, P, G, PM, pob, genomas, hist, mejorGlobal, opt, gen, ejecutando = false;
+
+[['pP','vP',''], ['pG','vG',''], ['pM','vM','%']].forEach(([i, o, u]) => $(i).oninput = () => $(o).textContent = $(i).value + u);
+
+function iniciar() {
+  if (ejecutando) return;
+  const nombre = $('nombre').value.trim(), pres = Number($('presupuesto').value);
+  if (!nombre) { alert('Por favor, escribe el nombre de tu mascota.'); return; }
+  if (!Number.isFinite(pres) || pres < 300 || pres > 10000) { alert('El presupuesto debe estar entre $300 y $10,000.'); return; }
+  ctx = {nec: $('necesidad').value, esp: $('especie').value, edad: $('edad').value, pres};
+  P = +$('pP').value; G = +$('pG').value; PM = +$('pM').value / 100;
+  opt = fuerzaBruta(ctx);
+  genomas = Array.from({length: P}, nuevoGenoma);
+  hist = []; mejorGlobal = null; gen = 0; ejecutando = true;
+  ['startBtn', 'clearBtn'].forEach(i => $(i).disabled = true);
+  $('historial').innerHTML = ''; $('barra').style.width = '0%';
+  $('sOpt').textContent = opt.mejor.d.f.toFixed(1) + '%';
+  $('resultadoCard').innerHTML = '<p style="text-align:center;padding:20px">🧬 Evolucionando...</p>';
+  $('estado').textContent = 'Generando población inicial de ' + P + ' planes...';
+  graficar(); setTimeout(paso, 150);
+}
+
+function paso() {
+  pob = evaluarPob(genomas, ctx); gen++;
+  const top = pob[0], prom = pob.reduce((a, x) => a + x.d.f, 0) / pob.length;
+  if (!mejorGlobal || top.d.f > mejorGlobal.d.f + 1e-9) mejorGlobal = {g: top.g.slice(), d: top.d, gen};
+  hist.push({mejor: mejorGlobal.d.f, prom});
+  $('sGen').textContent = gen + '/' + G; $('sBest').textContent = mejorGlobal.d.f.toFixed(1) + '%'; $('sAvg').textContent = prom.toFixed(1) + '%';
+  $('barra').style.width = gen / G * 100 + '%';
+  $('estado').textContent = 'Generación ' + gen + ': evaluando, seleccionando, cruzando y mutando.';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${gen}</td><td>${mejorGlobal.d.f.toFixed(1)}%</td><td>${prom.toFixed(1)}%</td><td><span class="badge">Evolucionando</span></td>`;
+  $('historial').prepend(tr); graficar();
+  if (gen >= G) return finalizar();
+  genomas = siguiente(pob, P, PM); setTimeout(paso, 110);
+}
+
+function graficar() {
+  const cv = $('grafica'), c = cv.getContext('2d'), W = cv.width, H = cv.height, m = 48;
+  const x = i => m + (G > 1 ? i / (G - 1) : 0) * (W - 2 * m), y = v => H - m - v / 100 * (H - 2 * m);
+  c.clearRect(0, 0, W, H); c.font = '13px Arial'; c.lineWidth = 1;
+  [0, 25, 50, 75, 100].forEach(v => {
+    c.strokeStyle = '#e5eeea'; c.beginPath(); c.moveTo(m, y(v)); c.lineTo(W - m, y(v)); c.stroke();
+    c.fillStyle = '#718583'; c.textAlign = 'right'; c.fillText(v + '%', m - 8, y(v) + 4);
+  });
+  c.textAlign = 'center'; c.fillStyle = '#718583';
+  if (hist && hist.length) { c.fillText('Generaciones (1 a ' + G + ')', W / 2, H - 10); }
+  else { c.fillText('Esperando datos...', W / 2, H / 2); return; }
+  if (opt) { c.setLineDash([6, 5]); c.strokeStyle = '#9aa9a6'; c.beginPath(); c.moveTo(m, y(opt.mejor.d.f)); c.lineTo(W - m, y(opt.mejor.d.f)); c.stroke(); c.setLineDash([]); }
+  [['mejor', '#16877c'], ['prom', '#f3a64a']].forEach(([k, col]) => {
+    c.strokeStyle = col; c.lineWidth = 3; c.beginPath();
+    hist.forEach((d, i) => i ? c.lineTo(x(i), y(d[k])) : c.moveTo(x(i), y(d[k])));
+    c.stroke();
+  });
+  c.lineWidth = 1;
+}
+
+function finalizar() {
+  ejecutando = false; ['startBtn', 'clearBtn'].forEach(i => $(i).disabled = false);
+  $('estado').textContent = 'Búsqueda finalizada tras ' + G + ' generaciones.';
+  document.querySelectorAll('#historial .badge').forEach(b => b.textContent = 'Finalizada');
+  mostrarResultado();
+}
+
+function mostrarResultado() {
+  const d = mejorGlobal.d, pct = v => Math.round(v * 100);
+  const llego = d.f >= opt.mejor.d.f - 1e-9, evals = P * G;
+  const lista = d.sel.map((x, i) => `<div class="plan-item"><div><b>${x.n}</b><small>${CAT[i].titulo}</small></div><div class="price">${x.p ? '$' + x.p.toLocaleString('es-MX') + ' MXN' : '—'}</div></div>`).join('');
+  const dentro = d.costo <= ctx.pres;
+  $('resultadoCard').innerHTML = `
+    <div class="result-header"><div><span class="badge">Mejor individuo encontrado</span>
+      <h2 style="margin-top:10px">🐾 Resultado para ${esc($('nombre').value.trim())}</h2></div><div class="score">${d.f.toFixed(1)}%</div></div>
+    <p style="color:#718583;margin-bottom:12px">${$('especie').selectedOptions[0].text} · ${$('edad').selectedOptions[0].text} · Necesidad: ${$('necesidad').selectedOptions[0].text}</p>
+    ${lista}
+    <div class="metrics">
+      <div class="metric">Cobertura de la necesidad<b> ${pct(d.cob)}%</b><div class="bar"><div style="width:${pct(d.cob)}%"></div></div></div>
+      <div class="metric">Adecuación a especie y edad<b> ${pct(d.comp)}%</b><div class="bar"><div style="width:${pct(d.comp)}%"></div></div></div>
+      <div class="metric">Costo: <b>$${d.costo.toLocaleString('es-MX')}</b> de $${ctx.pres.toLocaleString('es-MX')}<div class="bar"><div style="width:${Math.min(100, d.costo / ctx.pres * 100)}%;background:${dentro ? '#167d75' : '#bd6a25'}"></div></div></div>
+    </div>
+    <p style="font-weight:bold;color:${dentro ? '#16805e' : '#bd6a25'}">${dentro ? '✓ Dentro del presupuesto' : '⚠ Supera el presupuesto'}</p>
+    <div class="info"><b>Interpretación:</b> el algoritmo evaluó ${evals.toLocaleString('es-MX')} planes (${P} por generación × ${G}) de ${opt.total.toLocaleString('es-MX')} combinaciones posibles y encontró su mejor plan en la generación ${mejorGlobal.gen}.
+      Al comparar con la búsqueda exhaustiva, ${llego ? 'alcanzó el <b>óptimo global</b> (' + opt.mejor.d.f.toFixed(1) + '%).' : 'obtuvo ' + d.f.toFixed(1) + '% frente al óptimo de ' + opt.mejor.d.f.toFixed(1) + '%; subir la población o las generaciones suele cerrar esa brecha.'}
+      La aptitud mide cobertura, adecuación y costo, no calidad clínica.</div>
+    <div class="actions"><button onclick="window.print()">🖨️ Imprimir resultados</button><button class="btn-secondary" onclick="iniciar()">🔄 Ejecutar nuevamente</button></div>`;
+  $('resultadoCard').scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+function limpiar() {
+  if (ejecutando) return;
+  $('nombre').value = ''; $('especie').value = 'perro'; $('edad').value = 'adulto'; $('necesidad').value = 'general'; $('presupuesto').value = 1800;
+  [['pP', 30, 'vP', ''], ['pG', 40, 'vG', ''], ['pM', 15, 'vM', '%']].forEach(([i, v, o, u]) => { $(i).value = v; $(o).textContent = v + u; });
+  ['sGen', 'sAvg'].forEach(i => $(i).textContent = '0'); $('sBest').textContent = '0%'; $('sAvg').textContent = '0%'; $('sOpt').textContent = '–';
+  $('barra').style.width = '0%'; $('estado').textContent = 'Esperando el inicio del algoritmo...';
+  $('historial').innerHTML = '<tr><td colspan="4">Aún no hay datos.</td></tr>';
+  $('resultadoCard').innerHTML = '<p style="text-align:center;padding:20px;color:#718583">🔬 Ejecuta el algoritmo para ver el resultado.</p>';
+  hist = []; opt = null; graficar();
+}
+G = 40; hist = []; graficar();
+</script>
+</body>
+</html>
